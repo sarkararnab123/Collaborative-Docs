@@ -1,120 +1,203 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+
+import api from "../api/axios";
 import "../styles/dashboard.css";
 
 function Dashboard() {
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const user = JSON.parse(
+    localStorage.getItem("user")
+  );
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await api.get("/documents");
+
+      setDocuments(response.data.documents);
+
+    } catch (error) {
+      console.error(
+        "Failed to fetch documents:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const createDocument = async () => {
+    try {
+      const response = await api.post(
+        "/documents",
+        {
+          title: "Untitled Document"
+        }
+      );
+
+      const newDocument = response.data.document;
+
+      setDocuments((prev) => [
+        newDocument,
+        ...prev
+      ]);
+
+    } catch (error) {
+      console.error(
+        "Failed to create document:",
+        error
+      );
+    }
+  };
+
   return (
     <div className="dashboard">
 
       {/* Sidebar */}
+
       <aside className="sidebar">
 
         <div className="logo">
           CollabDocs
         </div>
 
-        <button className="new-document">
+        <button
+          className="new-document"
+          onClick={createDocument}
+        >
           + New Document
         </button>
 
         <div className="sidebar-section">
-          <p className="section-title">Documents</p>
 
-          <Link to="/editor/1" className="document-link">
-            📄 My First Document
-          </Link>
+          <p className="section-title">
+            Documents
+          </p>
 
-          <Link to="/editor/2" className="document-link">
-            📄 Project Ideas
-          </Link>
+          {documents.map((document) => (
+            <Link
+              key={document._id}
+              to={`/editor/${document._id}`}
+              className="document-link"
+            >
+              {document.title}
+            </Link>
+          ))}
 
-          <Link to="/editor/3" className="document-link">
-            📄 Meeting Notes
-          </Link>
         </div>
 
       </aside>
 
 
-      {/* Main Content */}
+      {/* Main */}
+
       <main className="dashboard-main">
 
-        {/* Navbar */}
         <header className="dashboard-navbar">
 
           <div>
             <h1>My Documents</h1>
-            <p>Manage and collaborate on your documents.</p>
+
+            <p>
+              Manage and collaborate on your documents.
+            </p>
           </div>
 
           <div className="user-section">
-            <span>Arnab</span>
+
+            <span>
+              {user?.name}
+            </span>
 
             <div className="avatar">
-              A
+              {user?.name?.charAt(0).toUpperCase()}
             </div>
+
           </div>
 
         </header>
 
 
-        {/* Documents */}
         <section className="documents-section">
 
           <div className="section-header">
-            <h2>Recent Documents</h2>
 
-            <Link to="/editor/new">
-              <button className="create-button">
-                + Create Document
+            <h2>
+              Recent Documents
+            </h2>
+
+            <button
+              className="create-button"
+              onClick={createDocument}
+            >
+              + Create Document
+            </button>
+
+          </div>
+
+
+          {loading ? (
+
+            <p>Loading documents...</p>
+
+          ) : documents.length === 0 ? (
+
+            <div>
+              <p>
+                You don't have any documents yet.
+              </p>
+
+              <button
+                className="create-button"
+                onClick={createDocument}
+              >
+                Create your first document
               </button>
-            </Link>
-          </div>
+            </div>
 
+          ) : (
 
-          <div className="document-grid">
+            <div className="document-grid">
 
-            <Link to="/editor/1" className="document-card">
+              {documents.map((document) => (
 
-              <div className="document-icon">
-                📄
-              </div>
+                <Link
+                  key={document._id}
+                  to={`/editor/${document._id}`}
+                  className="document-card"
+                >
 
-              <div>
-                <h3>My First Document</h3>
-                <p>Edited recently</p>
-              </div>
+                  <div className="document-icon">
+                    📄
+                  </div>
 
-            </Link>
+                  <div>
 
+                    <h3>
+                      {document.title}
+                    </h3>
 
-            <Link to="/editor/2" className="document-card">
+                    <p>
+                      {new Date(
+                        document.updatedAt
+                      ).toLocaleDateString()}
+                    </p>
 
-              <div className="document-icon">
-                📄
-              </div>
+                  </div>
 
-              <div>
-                <h3>Project Ideas</h3>
-                <p>Edited yesterday</p>
-              </div>
+                </Link>
 
-            </Link>
+              ))}
 
+            </div>
 
-            <Link to="/editor/3" className="document-card">
-
-              <div className="document-icon">
-                📄
-              </div>
-
-              <div>
-                <h3>Meeting Notes</h3>
-                <p>Edited 2 days ago</p>
-              </div>
-
-            </Link>
-
-          </div>
+          )}
 
         </section>
 

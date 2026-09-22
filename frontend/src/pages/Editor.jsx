@@ -1,20 +1,76 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+import api from "../api/axios";
 import "../styles/editor.css";
 
 function Editor() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  const [title, setTitle] = useState(
-    id === "new" ? "Untitled Document" : "My First Document"
-  );
-
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchDocument = async () => {
+      try {
+        const response = await api.get(
+          `/documents/${id}`
+        );
+
+        const document = response.data.document;
+
+        setTitle(document.title);
+        setContent(document.content);
+
+      } catch (error) {
+        console.error(
+          "Failed to fetch document:",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocument();
+  }, [id]);
+
+
+  const saveDocument = async () => {
+    try {
+      setSaving(true);
+
+      await api.put(`/documents/${id}`, {
+        title,
+        content
+      });
+
+    } catch (error) {
+      console.error(
+        "Failed to save document:",
+        error
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
+  if (loading) {
+    return (
+      <div>
+        Loading document...
+      </div>
+    );
+  }
+
 
   return (
     <div className="editor-page">
-
-      {/* Top bar */}
 
       <header className="editor-navbar">
 
@@ -22,7 +78,7 @@ function Editor() {
 
           <button
             className="back-button"
-            onClick={() => window.history.back()}
+            onClick={() => navigate("/")}
           >
             ←
           </button>
@@ -35,42 +91,57 @@ function Editor() {
 
 
         <div className="editor-status">
+
           <span className="saved-dot"></span>
-          Saved
+
+          {saving ? "Saving..." : "Saved"}
+
         </div>
 
 
         <div className="editor-user">
+
           <div className="avatar">
             A
           </div>
+
         </div>
 
       </header>
 
-
-      {/* Editor */}
 
       <main className="editor-container">
 
         <input
           className="title-input"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) =>
+            setTitle(e.target.value)
+          }
         />
 
 
         <div className="editor-info">
-          Last edited just now
+          Document ID: {id}
         </div>
 
 
         <textarea
           className="content-editor"
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) =>
+            setContent(e.target.value)
+          }
           placeholder="Start writing your document..."
         />
+
+
+        <button
+          className="save-button"
+          onClick={saveDocument}
+        >
+          Save Document
+        </button>
 
       </main>
 

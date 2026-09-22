@@ -133,3 +133,18 @@
   }
 
 }
+.save-button {
+  padding: 10px 18px;
+
+  border: none;
+  border-radius: 7px;
+
+  background: #111827;
+  color: white;
+
+  cursor: pointer;
+}
+
+.save-button:hover {
+  background: #1f2937;
+}
