@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { Server } from "socket.io";
+import http from 'http'
 
 import connectDB from "./src/config/db.js";
 
@@ -30,13 +32,46 @@ app.get("/", (req, res) => {
 });
 
 
+const httpServer = http.createServer(app);
+
+const io = new Server(httpServer,{
+  cors:{
+    origin:"http://localhost:5173"
+  }
+})
+
+io.on("connection", (socket)=>{
+  console.log("User connected", socket.id);
+
+  socket.on("join-document",(documentId)=>{
+    socket.join(documentId);
+
+    console.log(`User ${socket.id} joined document ${documentId}`)
+  });
+
+  socket.on("document-change",(data)=>{
+    const {documentId,title,content} = data;
+    socket.to(documentId).emit(
+    "document-updated",{
+      title,
+      content
+    }
+  );
+  })
+
+  socket.on("disconnect",()=>{
+    console.log("User disconnected:",socket.id)
+  });
+
+})
+
 // Start server
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();
 
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 };

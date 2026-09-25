@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import api from "../api/axios";
 import "../styles/editor.css";
+import socket from "../socket";
 
 function Editor() {
   const { id } = useParams();
@@ -38,6 +39,44 @@ function Editor() {
 
     fetchDocument();
   }, [id]);
+
+  //socket io
+  useEffect(()=>{
+    socket.emit("join-document",id)
+
+    //recieve changes from other users
+    socket.on("document-updated",(data)=>{
+      setTitle(data.title);
+      setContent(data.content);
+    })
+    return ()=>{
+      socket.off("document-updated");
+    }
+  },[id])
+
+  const handleTitleChange = (e)=>{
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+
+    socket.emit(
+      "document-change",{
+        documentId:id,
+        title:newTitle,
+        content
+      }
+    );
+  }
+
+  const handleContentChange = (e) =>{
+    const newContent = e.target.value;
+    setContent(newContent);
+
+    socket.emit("document-change",{
+      documentId:id,
+      title,
+      content:newContent
+    })
+  }
 
 
   const saveDocument = async () => {

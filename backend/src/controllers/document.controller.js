@@ -1,4 +1,5 @@
 import Document from "../models/document.model.js";
+import User from "../models/user.model.js"
 
 
 // Create document
@@ -29,10 +30,15 @@ export const createDocument = async (req, res) => {
 export const getDocuments = async (req, res) => {
   try {
     const documents = await Document.find({
-      owner: req.userId
-    }).sort({
-      updatedAt: -1
-    });
+  $or: [
+    { owner: req.userId },
+    { collaborators: req.userId }
+  ]
+}).sort({
+  updatedAt: -1
+}).populate("owner", "name email")
+.populate("collaborators", "name email");
+
 
     res.json({
       documents
@@ -51,9 +57,14 @@ export const getDocuments = async (req, res) => {
 export const getDocument = async (req, res) => {
   try {
     const document = await Document.findOne({
-      _id: req.params.id,
-      owner: req.userId
-    });
+  _id: req.params.id,
+
+  $or: [
+    { owner: req.userId },
+    { collaborators: req.userId }
+  ]
+}).populate("owner", "name email")
+.populate("collaborators", "name email")
 
     if (!document) {
       return res.status(404).json({
@@ -82,7 +93,10 @@ export const updateDocument = async (req, res) => {
     const document = await Document.findOneAndUpdate(
       {
         _id: req.params.id,
-        owner: req.userId
+          $or:[
+        {owner:req.userId},
+        {collaborators:req.userId}
+      ]
       },
       {
         title,
@@ -134,6 +148,82 @@ export const deleteDocument = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Failed to delete document",
+      error: error.message
+    });
+  }
+};
+
+
+export const shareDocument = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "User email is required"
+      });
+    }
+
+    // Find the document and make sure
+    // the current user is the owner
+    const document = await Document.findOne({
+      _id: req.params.id,
+      owner: req.userId
+    });
+
+    if (!document) {
+      return res.status(404).json({
+        message: "Document not found or you are not the owner"
+      });
+    }
+
+    // Find the user we want to add
+    const user = await User.findOne({
+      email: email.toLowerCase()
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User with this email does not exist"
+      });
+    }
+
+    // Owner cannot be added as collaborator
+    if (user._id.toString() === req.userId.toString()) {
+      return res.status(400).json({
+        message: "You are already the owner of this document"
+      });
+    }
+
+    // Check if already a collaborator
+    const alreadyCollaborator =
+      document.collaborators.some(
+        (id) => id.toString() === user._id.toString()
+      );
+
+    if (alreadyCollaborator) {
+      return res.status(400).json({
+        message: "User is already a collaborator"
+      });
+    }
+
+    // Add user
+    document.collaborators.push(user._id);
+
+    await document.save();
+
+    res.status(200).json({
+      message: "Document shared successfully",
+      collaborator: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to share document",
       error: error.message
     });
   }

@@ -5,7 +5,8 @@ import {
   getDocuments,
   getDocument,
   updateDocument,
-  deleteDocument
+  deleteDocument,
+  shareDocument
 } from "../controllers/document.controller.js";
 
 import protect from "../middlewares/auth.middleware.js";
@@ -23,5 +24,7 @@ router.get("/:id", getDocument);
 router.put("/:id", updateDocument);
 
 router.delete("/:id", deleteDocument);
+
+router.post("/:id/share", shareDocument);
 
 export default router;
