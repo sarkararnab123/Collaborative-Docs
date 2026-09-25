@@ -148,3 +148,220 @@
 .save-button:hover {
   background: #1f2937;
 }
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.share-button {
+  padding: 8px 16px;
+
+  border: none;
+  border-radius: 7px;
+
+  background: #111827;
+  color: white;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.share-button:hover {
+  background: #374151;
+}
+
+
+/* Modal */
+
+.modal-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  z-index: 1000;
+}
+
+.share-modal {
+  width: 430px;
+  max-width: calc(100% - 40px);
+
+  background: white;
+
+  border-radius: 12px;
+
+  padding: 25px;
+
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+.share-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  margin-bottom: 25px;
+}
+
+.share-modal-header h2 {
+  margin: 0;
+
+  font-size: 20px;
+}
+
+.share-modal-header p {
+  margin-top: 6px;
+
+  font-size: 13px;
+
+  color: #6b7280;
+}
+
+.close-modal {
+  border: none;
+
+  background: transparent;
+
+  font-size: 24px;
+
+  color: #6b7280;
+
+  cursor: pointer;
+}
+
+.share-modal form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.share-modal label {
+  font-size: 13px;
+
+  font-weight: 500;
+
+  color: #374151;
+}
+
+.share-modal input {
+  padding: 11px 13px;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 7px;
+
+  outline: none;
+
+  font-size: 14px;
+}
+
+.share-modal input:focus {
+  border-color: #111827;
+}
+
+.share-submit {
+  margin-top: 8px;
+
+  padding: 11px;
+
+  border: none;
+
+  border-radius: 7px;
+
+  background: #111827;
+
+  color: white;
+
+  cursor: pointer;
+}
+
+.share-submit:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+.share-error {
+  margin: 0;
+
+  font-size: 13px;
+
+  color: #dc2626;
+}
+
+.share-success {
+  margin: 0;
+
+  font-size: 13px;
+
+  color: #16a34a;
+}
+
+
+/* Collaborators */
+
+.collaborators-section {
+  margin-top: 25px;
+
+  padding-top: 20px;
+
+  border-top: 1px solid #e5e7eb;
+}
+
+.collaborators-section h3 {
+  margin: 0 0 15px;
+
+  font-size: 14px;
+}
+
+.collaborator {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 8px 0;
+}
+
+.collaborator-avatar {
+  width: 32px;
+  height: 32px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #f3f4f6;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.collaborator strong {
+  display: block;
+
+  font-size: 13px;
+}
+
+.collaborator p {
+  margin: 2px 0 0;
+
+  font-size: 11px;
+
+  color: #9ca3af;
+}

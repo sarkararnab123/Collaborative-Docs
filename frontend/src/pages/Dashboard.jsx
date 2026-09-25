@@ -17,7 +17,6 @@ function Dashboard() {
       const response = await api.get("/documents");
 
       setDocuments(response.data.documents);
-
     } catch (error) {
       console.error(
         "Failed to fetch documents:",
@@ -47,13 +46,21 @@ function Dashboard() {
         newDocument,
         ...prev
       ]);
-
     } catch (error) {
       console.error(
         "Failed to create document:",
         error
       );
     }
+  };
+
+  const isOwner = (document) => {
+    if (!document.owner) return false;
+
+    return (
+      document.owner._id === user?._id ||
+      document.owner === user?._id
+    );
   };
 
   return (
@@ -86,7 +93,7 @@ function Dashboard() {
               to={`/editor/${document._id}`}
               className="document-link"
             >
-              {document.title}
+              📄 {document.title}
             </Link>
           ))}
 
@@ -102,7 +109,9 @@ function Dashboard() {
         <header className="dashboard-navbar">
 
           <div>
-            <h1>My Documents</h1>
+            <h1>
+              My Documents
+            </h1>
 
             <p>
               Manage and collaborate on your documents.
@@ -116,7 +125,9 @@ function Dashboard() {
             </span>
 
             <div className="avatar">
-              {user?.name?.charAt(0).toUpperCase()}
+              {user?.name
+                ?.charAt(0)
+                .toUpperCase()}
             </div>
 
           </div>
@@ -144,11 +155,14 @@ function Dashboard() {
 
           {loading ? (
 
-            <p>Loading documents...</p>
+            <p>
+              Loading documents...
+            </p>
 
           ) : documents.length === 0 ? (
 
-            <div>
+            <div className="empty-state">
+
               <p>
                 You don't have any documents yet.
               </p>
@@ -159,41 +173,62 @@ function Dashboard() {
               >
                 Create your first document
               </button>
+
             </div>
 
           ) : (
 
             <div className="document-grid">
 
-              {documents.map((document) => (
+              {documents.map((document) => {
 
-                <Link
-                  key={document._id}
-                  to={`/editor/${document._id}`}
-                  className="document-card"
-                >
+                const owner = isOwner(document);
 
-                  <div className="document-icon">
-                    📄
-                  </div>
+                return (
+                  <Link
+                    key={document._id}
+                    to={`/editor/${document._id}`}
+                    className="document-card"
+                  >
 
-                  <div>
+                    <div className="document-icon">
+                      📄
+                    </div>
 
-                    <h3>
-                      {document.title}
-                    </h3>
 
-                    <p>
-                      {new Date(
-                        document.updatedAt
-                      ).toLocaleDateString()}
-                    </p>
+                    <div className="document-card-content">
 
-                  </div>
+                      <h3>
+                        {document.title}
+                      </h3>
 
-                </Link>
+                      <p className="document-date">
+                        Updated{" "}
+                        {new Date(
+                          document.updatedAt
+                        ).toLocaleDateString()}
+                      </p>
 
-              ))}
+
+                      <div className="document-role">
+
+                        {owner ? (
+                          <span className="owner-badge">
+                            Owned by you
+                          </span>
+                        ) : (
+                          <span className="shared-badge">
+                            Shared with you
+                          </span>
+                        )}
+
+                      </div>
+
+                    </div>
+
+                  </Link>
+                );
+              })}
 
             </div>
 

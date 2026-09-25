@@ -186,6 +186,102 @@
   font-size: 13px;
   color: #9ca3af;
 }
+.document-card {
+  text-decoration: none;
+  color: inherit;
+
+  display: flex;
+  gap: 15px;
+
+  padding: 20px;
+
+  background: white;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  transition: 0.2s ease;
+}
+
+.document-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.document-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #f3f4f6;
+
+  border-radius: 8px;
+
+  font-size: 20px;
+
+  flex-shrink: 0;
+}
+
+.document-card-content {
+  min-width: 0;
+}
+
+.document-card h3 {
+  margin: 0;
+
+  font-size: 16px;
+
+  color: #111827;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-date {
+  margin: 6px 0;
+
+  font-size: 12px;
+
+  color: #9ca3af;
+}
+
+.document-role {
+  margin-top: 8px;
+}
+
+.owner-badge,
+.shared-badge {
+  display: inline-block;
+
+  padding: 4px 8px;
+
+  border-radius: 5px;
+
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.owner-badge {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.shared-badge {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.empty-state {
+  padding: 50px 20px;
+
+  text-align: center;
+
+  color: #6b7280;
+}
 
 
 /* Responsive */
