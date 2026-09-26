@@ -66,14 +66,11 @@ function Editor() {
    * Check whether current user is owner
    */
 
-const ownerId =
-  document?.owner?._id || document?.owner;
+const ownerId = document?.owner?._id || document?.owner;
 
-const userId =
-  user?._id || user?.id;
+const userId = user?._id || user?.id;
 
-const isOwner =
-  ownerId?.toString() === userId?.toString();
+const isOwner = ownerId?.toString() === userId?.toString();
 
 
   /*
@@ -204,12 +201,9 @@ const isOwner =
        * collaborators list is updated
        */
 
-      const documentResponse =
-        await api.get(`/documents/${id}`);
+      const documentResponse =await api.get(`/documents/${id}`);
 
-      setDocument(
-        documentResponse.data.document
-      );
+      setDocument(documentResponse.data.document);
 
     } catch (error) {
       setShareError(
@@ -228,6 +222,15 @@ const isOwner =
         Loading document...
       </div>
     );
+  }
+
+  const handleDelete = async()=>{
+    try {
+      const deletedocs = await api.delete(`/documents/${id}`);
+      navigate("/");
+    } catch (error) {
+      console.log("delete handle error",error);
+    }
   }
 
 
@@ -279,6 +282,16 @@ const isOwner =
               Share
             </button>
           )}
+
+          {
+            isOwner && (
+              <button className="delete-button"
+              onClick={()=>{handleDelete()}}
+              >
+                Delete
+              </button>
+            )
+          }
 
         </div>
 
