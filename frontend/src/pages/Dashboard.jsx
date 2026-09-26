@@ -55,14 +55,17 @@ function Dashboard() {
     }
   };
 
-  const isOwner = (document) => {
-    if (!document.owner) return false;
+const isOwner = (document) => {
+  if (!document?.owner || !user) {
+    return false;
+  }
 
-    return (
-      document.owner._id === user?._id ||
-      document.owner === user?._id
-    );
-  };
+  const ownerId = document.owner._id || document.owner;
+
+  const userId = user._id || user.id;
+
+  return ownerId.toString() === userId.toString();
+};
 
   return (
     <div className="dashboard">

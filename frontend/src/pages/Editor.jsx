@@ -1,159 +1,189 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
+
 import api from "../api/axios";
 import socket from "../socket";
 
+import EditorToolbar from "../components/editor/EditorToolbar";
+import EditorContent from "../components/editor/EditorContent";
+import ShareModal from "../components/editor/ShareModal";
+
 import "../styles/editor.css";
 
+
 function Editor() {
+
   const { id } = useParams();
   const navigate = useNavigate();
+  // STATE
 
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-
   const [document, setDocument] = useState(null);
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Share state
   const [showShareModal, setShowShareModal] = useState(false);
   const [email, setEmail] = useState("");
   const [sharing, setSharing] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
   const [shareError, setShareError] = useState("");
 
-  const user = JSON.parse(
-    localStorage.getItem("user")
-  );
+// Current user
+const user = JSON.parse(localStorage.getItem("user"));
 
+  // TIPTAP EDITOR
 
-  /*
-   * Fetch document
-   */
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+
+      Link.configure({
+        openOnClick: false,
+      }),
+
+    ],
+    content: "",
+    onUpdate: ({ editor }) => {
+
+      const html = editor.getHTML();
+
+      socket.emit(
+        "document-change",
+        {
+          documentId: id,
+          title,
+          content: html,
+        }
+      );
+    },
+
+  });
+
+  // FETCH DOCUMENT
 
   useEffect(() => {
     const fetchDocument = async () => {
       try {
-        const response = await api.get(
-          `/documents/${id}`
-        );
+        const response =await api.get(`/documents/${id}`);
 
-        const fetchedDocument =
-          response.data.document;
-
+        const fetchedDocument =response.data.document;
         setDocument(fetchedDocument);
+        setTitle(fetchedDocument.title || "");
 
-        setTitle(fetchedDocument.title);
-        setContent(fetchedDocument.content);
-
+        // Put content inside Tiptap
+        if (editor) {
+          editor.commands.setContent(fetchedDocument.content || "",false);
+        }
       } catch (error) {
         console.error(
           "Failed to fetch document:",
           error
         );
+
       } finally {
         setLoading(false);
       }
     };
 
     fetchDocument();
-  }, [id]);
+
+  }, [id, editor]);
 
 
-  /*
-   * Check whether current user is owner
-   */
+  // CHECK OWNER
 
-const ownerId = document?.owner?._id || document?.owner;
+  const ownerId =document?.owner?._id ||document?.owner;
 
-const userId = user?._id || user?.id;
+  const userId =user?._id || user?.id;
 
-const isOwner = ownerId?.toString() === userId?.toString();
+  const isOwner = ownerId?.toString() ===  userId?.toString();
 
 
-  /*
-   * Join Socket.IO room
-   */
+  // SOCKET CONNECTION
 
   useEffect(() => {
-    socket.emit(
-      "join-document",
-      id
-    );
+    if (!id) return
 
-    socket.on(
-      "document-updated",
-      (data) => {
-        setTitle(data.title);
-        setContent(data.content);
-      }
-    );
+    // Join document room
+
+    socket.emit("join-document",id);
+
+    // Receive changes
+    const handleDocumentUpdate =(data) => {
+        if (data.title !== undefined) {
+          setTitle(data.title);
+        }
+        if (data.content !== undefined && editor) {
+          const currentContent = editor.getHTML();
+
+          // Prevent unnecessary update
+
+          if (currentContent !==data.content) {
+            editor.commands.setContent(
+              data.content,
+              false
+            );
+
+          }
+        }
+
+      };
+    socket.on("document-updated",handleDocumentUpdate);
+    // Cleanup
 
     return () => {
-      socket.off("document-updated");
+
+      socket.off("document-updated",handleDocumentUpdate);
+
     };
-  }, [id]);
 
+  }, [id, editor]);
 
-  /*
-   * Title changes
-   */
+  // TITLE CHANGE
 
   const handleTitleChange = (e) => {
+
     const newTitle = e.target.value;
 
     setTitle(newTitle);
-
     socket.emit(
       "document-change",
       {
         documentId: id,
         title: newTitle,
-        content
+        content: editor
+          ? editor.getHTML()
+          : "",
       }
     );
+
   };
 
-
-  /*
-   * Content changes
-   */
-
-  const handleContentChange = (e) => {
-    const newContent = e.target.value;
-
-    setContent(newContent);
-
-    socket.emit(
-      "document-change",
-      {
-        documentId: id,
-        title,
-        content: newContent
-      }
-    );
-  };
-
-
-  /*
-   * Save document
-   */
+  // SAVE DOCUMENT
 
   const saveDocument = async () => {
     try {
       setSaving(true);
+      const content =
+        editor
+          ? editor.getHTML()
+          : "";
 
       await api.put(
         `/documents/${id}`,
         {
           title,
-          content
+          content,
         }
       );
 
     } catch (error) {
+
       console.error(
         "Failed to save document:",
         error
@@ -163,89 +193,127 @@ const isOwner = ownerId?.toString() === userId?.toString();
     }
   };
 
-
-  /*
-   * Share document
-   */
+  // SHARE DOCUMENT
 
   const handleShare = async (e) => {
-    e.preventDefault();
 
+    e.preventDefault();
     if (!email.trim()) {
       setShareError(
         "Please enter a user email"
       );
+
       return;
     }
-
     try {
+
       setSharing(true);
       setShareError("");
       setShareMessage("");
 
-      const response = await api.post(
-        `/documents/${id}/share`,
-        {
-          email: email.trim()
-        }
-      );
+      const response =
+        await api.post(
+          `/documents/${id}/share`,
+          {
+            email: email.trim(),
+          }
+        );
+
 
       setShareMessage(
         response.data.message
       );
-
       setEmail("");
 
-      /*
-       * Refresh document so the
-       * collaborators list is updated
-       */
 
-      const documentResponse =await api.get(`/documents/${id}`);
+      // Refresh document
+      // to get updated collaborators
 
-      setDocument(documentResponse.data.document);
+      const documentResponse =
+        await api.get(
+          `/documents/${id}`
+        );
+
+      setDocument(
+        documentResponse.data.document
+      );
 
     } catch (error) {
+
       setShareError(
         error.response?.data?.message ||
         "Failed to share document"
       );
+
     } finally {
+
       setSharing(false);
+
     }
+
   };
 
+  // DELETE DOCUMENT
+
+  const handleDelete = async () => {
+    const confirmDelete =
+      window.confirm(
+        "Are you sure you want to delete this document?"
+      );
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+
+      await api.delete(
+        `/documents/${id}`
+      );
+      navigate("/");
+
+    } catch (error) {
+
+      console.error(
+        "Delete handle error:",
+        error
+      );
+
+    }
+
+  };
+
+  // LOADING
 
   if (loading) {
+
     return (
-      <div>
+      <div className="editor-loading">
         Loading document...
       </div>
     );
+
   }
 
-  const handleDelete = async()=>{
-    try {
-      const deletedocs = await api.delete(`/documents/${id}`);
-      navigate("/");
-    } catch (error) {
-      console.log("delete handle error",error);
-    }
-  }
+  // PAGE
 
 
   return (
-    <div className="editor-page">
 
-      {/* Navbar */}
+    <div className="editor-page">
+      {/* =====================
+          NAVBAR
+      ====================== */}
 
       <header className="editor-navbar">
+        {/* Left */}
 
         <div className="editor-left">
 
           <button
             className="back-button"
-            onClick={() => navigate("/")}
+            onClick={() =>
+              navigate("/")
+            }
           >
             ←
           </button>
@@ -256,6 +324,8 @@ const isOwner = ownerId?.toString() === userId?.toString();
 
         </div>
 
+
+        {/* Actions */}
 
         <div className="editor-actions">
 
@@ -271,52 +341,66 @@ const isOwner = ownerId?.toString() === userId?.toString();
 
 
           {isOwner && (
-            <button
-              className="share-button"
-              onClick={() => {
-                setShowShareModal(true);
-                setShareMessage("");
-                setShareError("");
-              }}
-            >
-              Share
-            </button>
-          )}
 
-          {
-            isOwner && (
-              <button className="delete-button"
-              onClick={()=>{handleDelete()}}
+            <>
+              <button
+                className="share-button"
+                onClick={() => {
+
+                  setShowShareModal(
+                    true
+                  );
+
+                  setShareMessage("");
+
+                  setShareError("");
+
+                }}
+              >
+                Share
+              </button>
+
+
+              <button
+                className="delete-button"
+                onClick={handleDelete}
               >
                 Delete
               </button>
-            )
-          }
+
+            </>
+
+          )}
 
         </div>
 
+
+        {/* User */}
 
         <div className="editor-user">
 
           <div className="avatar">
-            {user?.name
-              ?.charAt(0)
-              .toUpperCase()}
+
+            {user?.name?.charAt(0).toUpperCase()}
+
           </div>
-
         </div>
-
       </header>
 
-
-      {/* Editor */}
+      {/* =====================
+          EDITOR
+      ====================== */}
 
       <main className="editor-container">
+
+
+        {/* Title */}
 
         <input
           className="title-input"
           value={title}
           onChange={handleTitleChange}
+          placeholder="Untitled Document"
         />
 
 
@@ -325,154 +409,51 @@ const isOwner = ownerId?.toString() === userId?.toString();
         </div>
 
 
-        <textarea
-          className="content-editor"
-          value={content}
-          onChange={handleContentChange}
-          placeholder="Start writing your document..."
+        {/* Toolbar */}
+
+        <EditorToolbar editor={editor}
         />
 
+        {/* Tiptap */}
+
+        <EditorContent editor={editor}/>
+
+        {/* Save */}
 
         <button
           className="save-button"
           onClick={saveDocument}
         >
+
           {saving
             ? "Saving..."
             : "Save Document"}
-        </button>
 
+        </button>
       </main>
 
+      {/* =====================
+          SHARE MODAL
+      ====================== */}
 
-      {/* Share Modal */}
-
-      {showShareModal && (
-        <div
-          className="modal-overlay"
-          onClick={() =>
-            setShowShareModal(false)
-          }
-        >
-
-          <div
-            className="share-modal"
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-          >
-
-            <div className="share-modal-header">
-
-              <div>
-                <h2>
-                  Share Document
-                </h2>
-
-                <p>
-                  Add a collaborator to this document.
-                </p>
-              </div>
-
-              <button
-                className="close-modal"
-                onClick={() =>
-                  setShowShareModal(false)
-                }
-              >
-                ×
-              </button>
-
-            </div>
-
-
-            <form onSubmit={handleShare}>
-
-              <label>
-                User email
-              </label>
-
-              <input
-                type="email"
-                placeholder="rahul@gmail.com"
-                value={email}
-                onChange={(e) =>
-                  setEmail(e.target.value)
-                }
-              />
-
-
-              {shareError && (
-                <p className="share-error">
-                  {shareError}
-                </p>
-              )}
-
-
-              {shareMessage && (
-                <p className="share-success">
-                  {shareMessage}
-                </p>
-              )}
-
-
-              <button
-                type="submit"
-                className="share-submit"
-                disabled={sharing}
-              >
-                {sharing
-                  ? "Sharing..."
-                  : "Share"}
-              </button>
-
-            </form>
-
-
-            {document?.collaborators?.length > 0 && (
-              <div className="collaborators-section">
-
-                <h3>
-                  Collaborators
-                </h3>
-
-                {document.collaborators.map(
-                  (collaborator) => (
-                    <div
-                      key={collaborator._id}
-                      className="collaborator"
-                    >
-
-                      <div className="collaborator-avatar">
-                        {collaborator.name
-                          ?.charAt(0)
-                          .toUpperCase()}
-                      </div>
-
-                      <div>
-                        <strong>
-                          {collaborator.name}
-                        </strong>
-
-                        <p>
-                          {collaborator.email}
-                        </p>
-                      </div>
-
-                    </div>
-                  )
-                )}
-
-              </div>
-            )}
-
-          </div>
-
-        </div>
-      )}
+      <ShareModal
+        show={showShareModal}
+        onClose={() =>
+          setShowShareModal(false)
+        }
+        email={email}
+        setEmail={setEmail}
+        sharing={sharing}
+        shareMessage={shareMessage}
+        shareError={shareError}
+        handleShare={handleShare}
+        collaborators={
+          document?.collaborators
+        }
+      />
 
     </div>
+
   );
 }
-
 export default Editor;

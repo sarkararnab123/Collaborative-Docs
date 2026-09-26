@@ -365,3 +365,97 @@
 
   color: #9ca3af;
 }
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  padding: 8px;
+
+  margin-bottom: 15px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  background: #fafafa;
+
+  position: sticky;
+  top: 65px;
+
+  z-index: 10;
+}
+
+.toolbar-button {
+  min-width: 36px;
+  height: 32px;
+
+  padding: 0 8px;
+
+  border: none;
+  border-radius: 5px;
+
+  background: transparent;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  cursor: pointer;
+}
+
+.toolbar-button:hover {
+  background: #e5e7eb;
+}
+
+.toolbar-button.active {
+  background: #111827;
+  color: white;
+}
+
+.editor-content-wrapper {
+  min-height: 600px;
+
+  margin-bottom: 25px;
+}
+
+.ProseMirror {
+  min-height: 600px;
+
+  outline: none;
+
+  font-size: 18px;
+  line-height: 1.8;
+
+  color: #374151;
+}
+
+.ProseMirror p {
+  margin: 0 0 12px;
+}
+
+.ProseMirror h1 {
+  font-size: 32px;
+  line-height: 1.2;
+
+  margin: 25px 0 15px;
+}
+
+.ProseMirror h2 {
+  font-size: 26px;
+  line-height: 1.3;
+
+  margin: 22px 0 12px;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 30px;
+}
+
+.ProseMirror a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
